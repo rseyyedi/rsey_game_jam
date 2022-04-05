@@ -26,6 +26,14 @@ template<std::size_t Width, std::size_t Height> struct GameBoard
 
   std::string &get_string(std::size_t x, std::size_t y) { return strings.at(x).at(y); }
 
+  std::string set_label(std::size_t x, std::size_t y)
+  {
+    if((x == width -1) && ( y == height - 1)) {
+      return  fmt::format("{:^4}", "");
+    }
+    auto  label =  get_string(x, y) = std::to_string((x *width) + y + 1);
+    return  fmt::format("{:^4}", label);
+  }
 
   void set(std::size_t x, std::size_t y, bool new_value)
   {
@@ -85,12 +93,11 @@ template<std::size_t Width, std::size_t Height> struct GameBoard
   }
 };
 
-
-void consequence_game()
+void game_of_fifteen()
 {
   auto screen = ftxui::ScreenInteractive::TerminalOutput();
 
-  GameBoard<3, 3> gb;
+  GameBoard<4, 4> gb;
 
   std::string quit_text;
 
@@ -99,20 +106,20 @@ void consequence_game()
     if (game_board.solved()) { quit_text += " Solved!"; }
   };
 
-  const auto make_buttons = [&] {
-    std::vector<ftxui::Component> buttons;
+  const auto make_tiles = [&] {
+    std::vector<ftxui::Component> tiles;
     for (std::size_t x = 0; x < gb.width; ++x) {
       for (std::size_t y = 0; y < gb.height; ++y) {
-        buttons.push_back(ftxui::Button(&gb.get_string(x, y), [=, &gb] {
+        tiles.push_back(ftxui::Button(gb.set_label(x,y), [=, &gb] {
           if (!gb.solved()) { gb.press(x, y); }
           update_quit_text(gb);
         }));
       }
     }
-    return buttons;
+    return tiles;
   };
 
-  auto buttons = make_buttons();
+  auto tiles = make_tiles();
 
   auto quit_button = ftxui::Button(&quit_text, screen.ExitLoopClosure());
 
@@ -124,7 +131,7 @@ void consequence_game()
     for (std::size_t x = 0; x < gb.width; ++x) {
       std::vector<ftxui::Element> row;
       for (std::size_t y = 0; y < gb.height; ++y) {
-        row.push_back(buttons[idx]->Render());
+        row.push_back(tiles[idx]->Render());
         ++idx;
       }
       rows.push_back(ftxui::hbox(std::move(row)));
@@ -147,9 +154,9 @@ void consequence_game()
   gb.move_count = 0;
   update_quit_text(gb);
 
-  auto all_buttons = buttons;
-  all_buttons.push_back(quit_button);
-  auto container = ftxui::Container::Horizontal(all_buttons);
+  auto all_tiles = tiles;
+  all_tiles.push_back(quit_button);
+  auto container = ftxui::Container::Horizontal(all_tiles);
 
   auto renderer = ftxui::Renderer(container, make_layout);
 
