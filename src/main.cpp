@@ -157,11 +157,11 @@ void game_of_fifteen()
 
 
   static constexpr int randomization_iterations = 100;
-  static constexpr int random_seed1 = 42;
-  static constexpr int random_seed2 = 24;
+  std::random_device rd1;
+  std::random_device rd2;
 
-  std::mt19937 mt1{ random_seed1 };// NOLINT fixed seed
-  std::mt19937 mt2{ random_seed2 };// NOLINT fixed seed
+  std::mt19937 mt1{ rd1() };
+  std::mt19937 mt2{ rd2() };
   std::uniform_int_distribution<std::size_t> x1(static_cast<std::size_t>(0), gb.width - 1);
   std::uniform_int_distribution<std::size_t> x2(static_cast<std::size_t>(0), gb.width - 1);
   std::uniform_int_distribution<std::size_t> y1(static_cast<std::size_t>(0), gb.height - 1);
