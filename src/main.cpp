@@ -18,6 +18,7 @@ template<std::size_t Width, std::size_t Height> struct GameBoard
 {
   static constexpr std::size_t width = Width;
   static constexpr std::size_t height = Height;
+  std::string empty_tile = fmt::format("{:^4}","");
 
   std::array<std::array<std::string, height>, width> strings;
   std::array<std::array<bool, height>, width> values{};
@@ -25,32 +26,11 @@ template<std::size_t Width, std::size_t Height> struct GameBoard
   std::size_t move_count{ 0 };
 
   std::string &get_string(std::size_t x, std::size_t y) { return strings.at(x).at(y); }
+  [[nodiscard]] std::string get_label(std::size_t x, std::size_t y) const { return strings.at(x).at(y); }
 
   std::string set_label(std::size_t x, std::size_t y)
   {
-    if((x == width -1) && ( y == height - 1)) {
-      return  fmt::format("{:^4}", "");
-    }
-    auto  label =  get_string(x, y) = std::to_string((x *width) + y + 1);
-    return  fmt::format("{:^4}", label);
-  }
-
-  void set(std::size_t x, std::size_t y, bool new_value)
-  {
-    get(x, y) = new_value;
-
-    if (new_value) {
-      get_string(x, y) = " ON";
-    } else {
-      get_string(x, y) = "OFF";
-    }
-  }
-
-  void visit(auto visitor)
-  {
-    for (std::size_t x = 0; x < width; ++x) {
-      for (std::size_t y = 0; y < height; ++y) { visitor(x, y, *this); }
-    }
+    return fmt::format("{:^4}", strings.at(x).at(y));
   }
 
   [[nodiscard]] bool get(std::size_t x, std::size_t y) const { return values.at(x).at(y); }
@@ -59,7 +39,14 @@ template<std::size_t Width, std::size_t Height> struct GameBoard
 
   GameBoard()
   {
-    visit([](const auto x, const auto y, auto &gameboard) { gameboard.set(x, y, true); });
+    for (std::size_t x = 0; x < width; ++x) {
+      for (std::size_t y = 0; y < height; ++y) { 
+        auto tile_num = (x *width) + y + 1;
+        strings.at(x).at(y) = fmt::format("{:^4}", std::to_string(tile_num));
+      }
+    }
+    strings.at(width -1).at(height-1) = empty_tile;
+  //  visit([](const auto x, const auto y, auto &gameboard) { gameboard.set(x, y, true); });
   }
 
   void update_strings()
@@ -70,22 +57,48 @@ template<std::size_t Width, std::size_t Height> struct GameBoard
   }
 
   void toggle(std::size_t x, std::size_t y) { set(x, y, !get(x, y)); }
-
-  void press(std::size_t x, std::size_t y)
+  void swap(std::size_t x_old, std::size_t y_old, std::size_t x_new, std::size_t y_new) 
   {
+    auto tmp_label = get_string(x_new, y_new);
+    get_string(x_new, y_new) = get_string(x_old, y_old);
+    get_string(x_old, y_old) = tmp_label;
+  }
+    
+  void press(std::size_t x, std::size_t y)
+  { 
     ++move_count;
-    toggle(x, y);
-    if (x > 0) { toggle(x - 1, y); }
-    if (y > 0) { toggle(x, y - 1); }
-    if (x < width - 1) { toggle(x + 1, y); }
-    if (y < height - 1) { toggle(x, y + 1); }
+    // check if an empty tile is adjacent
+    // up
+    if ((y < height - 1) && get_label(x, y+1) == empty_tile) {
+      swap(x, y, x, y+1);
+    }
+    // down
+    else if ((y > 0) && get_label(x, y - 1) == empty_tile) {
+      swap(x, y, x, y-1 );
+    }
+    // right
+    else if ((x < width - 1) && get_label(x + 1, y) == empty_tile) {
+      swap(x, y, x+1, y);
+    }
+    // left
+    else if ((x > 0) && get_label(x - 1, y) == empty_tile) {
+      swap(x, y, x-1, y);
+    }
+    else {--move_count;}
+    
   }
 
   [[nodiscard]] bool solved() const
   {
+    if (get_label(width -1 , height -1) != empty_tile)
+      {return false;}
     for (std::size_t x = 0; x < width; ++x) {
       for (std::size_t y = 0; y < height; ++y) {
-        if (!get(x, y)) { return false; }
+        auto tile_num = (x *width) + y + 1;
+        auto label = fmt::format("{:^4}", std::to_string(tile_num));
+        if ( x == (width -1) && y == (height -1)) {
+          if (get_label(x, y) != empty_tile) { return false;}
+        }else if (get_label(x, y) != label) { return false; }
       }
     }
 
@@ -110,7 +123,7 @@ void game_of_fifteen()
     std::vector<ftxui::Component> tiles;
     for (std::size_t x = 0; x < gb.width; ++x) {
       for (std::size_t y = 0; y < gb.height; ++y) {
-        tiles.push_back(ftxui::Button(gb.set_label(x,y), [=, &gb] {
+        tiles.push_back(ftxui::Button(&gb.get_string(x,y), [=, &gb] {
           if (!gb.solved()) { gb.press(x, y); }
           update_quit_text(gb);
         }));
@@ -144,19 +157,29 @@ void game_of_fifteen()
 
 
   static constexpr int randomization_iterations = 100;
-  static constexpr int random_seed = 42;
+  static constexpr int random_seed1 = 42;
+  static constexpr int random_seed2 = 24;
 
-  std::mt19937 gen32{ random_seed };// NOLINT fixed seed
-  std::uniform_int_distribution<std::size_t> x(static_cast<std::size_t>(0), gb.width - 1);
-  std::uniform_int_distribution<std::size_t> y(static_cast<std::size_t>(0), gb.height - 1);
+  std::mt19937 mt1{ random_seed1 };// NOLINT fixed seed
+  std::mt19937 mt2{ random_seed2 };// NOLINT fixed seed
+  std::uniform_int_distribution<std::size_t> x1(static_cast<std::size_t>(0), gb.width - 1);
+  std::uniform_int_distribution<std::size_t> x2(static_cast<std::size_t>(0), gb.width - 1);
+  std::uniform_int_distribution<std::size_t> y1(static_cast<std::size_t>(0), gb.height - 1);
+  std::uniform_int_distribution<std::size_t> y2(static_cast<std::size_t>(0), gb.height - 1);
 
-  for (int i = 0; i < randomization_iterations; ++i) { gb.press(x(gen32), y(gen32)); }
+  for (int i = 0; i < randomization_iterations; ++i) { gb.swap(x1(mt1), y1(mt1), x2(mt2), y2(mt2)); }
   gb.move_count = 0;
   update_quit_text(gb);
 
   auto all_tiles = tiles;
   all_tiles.push_back(quit_button);
   auto container = ftxui::Container::Horizontal(all_tiles);
+
+    for (std::size_t x = 0; x < gb.width; ++x) {
+      for (std::size_t y = 0; y < gb.height; ++y) { 
+        std::cout << gb.strings.at(x).at(y);
+      }
+    }
 
   auto renderer = ftxui::Renderer(container, make_layout);
 
@@ -213,102 +236,6 @@ private:
   std::vector<Color> pixels = std::vector<Color>(width_ * height_, Color{});
 };
 
-void game_iteration_canvas()
-{
-  // this should probably have a `bitmap` helper function that does what you expect
-  // similar to the other parts of FTXUI
-  auto bm = std::make_shared<Bitmap>(50, 50);// NOLINT magic numbers
-  auto small_bm = std::make_shared<Bitmap>(6, 6);// NOLINT magic numbers
-
-  double fps = 0;
-
-  std::size_t max_row = 0;
-  std::size_t max_col = 0;
-
-  // to do, add total game time clock also, not just current elapsed time
-  auto game_iteration = [&](const std::chrono::steady_clock::duration elapsed_time) {
-    // in here we simulate however much game time has elapsed. Update animations,
-    // run character AI, whatever, update stats, etc
-
-    // this isn't actually timing based for now, it's just updating the display however fast it can
-    fps = 1.0
-          / (static_cast<double>(std::chrono::duration_cast<std::chrono::microseconds>(elapsed_time).count())
-             / 1'000'000.0);// NOLINT magic numbers
-
-    for (std::size_t row = 0; row < max_row; ++row) {
-      for (std::size_t col = 0; col < bm->width(); ++col) { ++(bm->at(col, row).R); }
-    }
-
-    for (std::size_t row = 0; row < bm->height(); ++row) {
-      for (std::size_t col = 0; col < max_col; ++col) { ++(bm->at(col, row).G); }
-    }
-
-    // for the fun of it, let's have a second window doing interesting things
-    auto &small_bm_pixel =
-      small_bm->data().at(static_cast<std::size_t>(elapsed_time.count()) % small_bm->data().size());
-
-    switch (elapsed_time.count() % 3) {
-    case 0:
-      small_bm_pixel.R += 11;// NOLINT Magic Number
-      break;
-    case 1:
-      small_bm_pixel.G += 11;// NOLINT Magic Number
-      break;
-    case 2:
-      small_bm_pixel.B += 11;// NOLINT Magic Number
-      break;
-    }
-
-
-    ++max_row;
-    if (max_row >= bm->height()) { max_row = 0; }
-    ++max_col;
-    if (max_col >= bm->width()) { max_col = 0; }
-  };
-
-  auto screen = ftxui::ScreenInteractive::TerminalOutput();
-
-  int counter = 0;
-
-  auto last_time = std::chrono::steady_clock::now();
-
-  auto make_layout = [&] {
-    // This code actually processes the draw event
-    const auto new_time = std::chrono::steady_clock::now();
-
-    ++counter;
-    // we will dispatch to the game_iteration function, where the work happens
-    game_iteration(new_time - last_time);
-    last_time = new_time;
-
-    // now actually draw the game elements
-    return ftxui::hbox({ bm | ftxui::border,
-      ftxui::vbox({ ftxui::text("Frame: " + std::to_string(counter)),
-        ftxui::text("FPS: " + std::to_string(fps)),
-        small_bm | ftxui::border }) });
-  };
-
-  auto renderer = ftxui::Renderer(make_layout);
-
-
-  std::atomic<bool> refresh_ui_continue = true;
-
-  // This thread exists to make sure that the event queue has an event to
-  // process at approximately a rate of 30 FPS
-  std::thread refresh_ui([&] {
-    while (refresh_ui_continue) {
-      using namespace std::chrono_literals;
-      std::this_thread::sleep_for(1.0s / 30.0);// NOLINT magic numbers
-      screen.PostEvent(ftxui::Event::Custom);
-    }
-  });
-
-  screen.Loop(renderer);
-
-  refresh_ui_continue = false;
-  refresh_ui.join();
-}
-
 int main(int argc, const char **argv)
 {
   try {
@@ -333,13 +260,13 @@ int main(int argc, const char **argv)
         rsey_game_jam::cmake::project_version));// version string, acquired
                                             // from config.hpp via CMake
 
-    if (args["turn_based"].asBool()) {
-      consequence_game();
-    } else {
-      game_iteration_canvas();
-    }
+    game_of_fifteen();
+//    if (args["turn_based"].asBool()) {
+//      consequence_game();
+//    } else {
+//      game_iteration_canvas();
+//    }
 
-    //    consequence_game();
   } catch (const std::exception &e) {
     fmt::print("Unhandled exception in main: {}", e.what());
   }
