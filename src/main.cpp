@@ -186,7 +186,7 @@ void game_of_fifteen()
   screen.Loop(renderer);
 }
 
-int main(int argc, const char **argv)
+int main()
 {
     game_of_fifteen();
 }
