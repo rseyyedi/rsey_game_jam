@@ -186,7 +186,31 @@ void game_of_fifteen()
   screen.Loop(renderer);
 }
 
-int main()
+int main(int argc, const char **argv)
 {
+  try {
+    static constexpr auto USAGE =
+      R"(intro
+
+    Usage:
+          intro 
+          intro (-h | --help)
+          intro --version
+ Options:
+          -h --help     Show this screen.
+          --version     Show version.
+)";
+
+    std::map<std::string, docopt::value> args = docopt::docopt(USAGE,
+      { std::next(argv), std::next(argv, argc) },
+      true,// show help if requested
+      fmt::format("{} {}",
+        rsey_game_jam::cmake::project_name,
+        rsey_game_jam::cmake::project_version));// version string, acquired
+                                            // from config.hpp via CMake
+
     game_of_fifteen();
+  } catch (const std::exception &e) {
+    fmt::print("Unhandled exception in main: {}", e.what());
+  }
 }
