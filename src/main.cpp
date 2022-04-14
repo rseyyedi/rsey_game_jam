@@ -28,15 +28,6 @@ template<std::size_t Width, std::size_t Height> struct GameBoard
   std::string &get_string(std::size_t x, std::size_t y) { return strings.at(x).at(y); }
   [[nodiscard]] std::string get_label(std::size_t x, std::size_t y) const { return strings.at(x).at(y); }
 
-  std::string set_label(std::size_t x, std::size_t y)
-  {
-    return fmt::format("{:^4}", strings.at(x).at(y));
-  }
-
-  [[nodiscard]] bool get(std::size_t x, std::size_t y) const { return values.at(x).at(y); }
-
-  [[nodiscard]] bool &get(std::size_t x, std::size_t y) { return values.at(x).at(y); }
-
   GameBoard()
   {
     for (std::size_t x = 0; x < width; ++x) {
@@ -49,14 +40,6 @@ template<std::size_t Width, std::size_t Height> struct GameBoard
   //  visit([](const auto x, const auto y, auto &gameboard) { gameboard.set(x, y, true); });
   }
 
-  void update_strings()
-  {
-    for (std::size_t x = 0; x < width; ++x) {
-      for (std::size_t y = 0; y < height; ++y) { set(x, y, get(x, y)); }
-    }
-  }
-
-  void toggle(std::size_t x, std::size_t y) { set(x, y, !get(x, y)); }
   void swap(std::size_t x_old, std::size_t y_old, std::size_t x_new, std::size_t y_new) 
   {
     auto tmp_label = get_string(x_new, y_new);
