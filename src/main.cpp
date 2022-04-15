@@ -18,7 +18,7 @@ template<std::size_t Width, std::size_t Height> struct GameBoard
 {
   static constexpr std::size_t width = Width;
   static constexpr std::size_t height = Height;
-  std::string empty_tile = fmt::format("{:^4}","");
+  std::string empty_tile = fmt::format("{:^4}", "");
 
   std::array<std::array<std::string, height>, width> strings;
   std::array<std::array<bool, height>, width> values{};
@@ -31,58 +31,59 @@ template<std::size_t Width, std::size_t Height> struct GameBoard
   GameBoard()
   {
     for (std::size_t x = 0; x < width; ++x) {
-      for (std::size_t y = 0; y < height; ++y) { 
-        auto tile_num = (x *width) + y + 1;
+      for (std::size_t y = 0; y < height; ++y) {
+        auto tile_num = (x * width) + y + 1;
         strings.at(x).at(y) = fmt::format("{:^4}", std::to_string(tile_num));
       }
     }
-    strings.at(width -1).at(height-1) = empty_tile;
-  //  visit([](const auto x, const auto y, auto &gameboard) { gameboard.set(x, y, true); });
+    strings.at(width - 1).at(height - 1) = empty_tile;
+    //  visit([](const auto x, const auto y, auto &gameboard) { gameboard.set(x, y, true); });
   }
 
   // NOLINTNEXTLINE(bugprone-exception-escape)
-  void swap(std::size_t x_old, std::size_t y_old, std::size_t x_new, std::size_t y_new) 
+  void swap(std::size_t x_old, std::size_t y_old, std::size_t x_new, std::size_t y_new)
   {
     auto tmp_label = get_string(x_new, y_new);
     get_string(x_new, y_new) = get_string(x_old, y_old);
     get_string(x_old, y_old) = tmp_label;
   }
-    
+
   void press(std::size_t x, std::size_t y)
-  { 
+  {
     ++move_count;
     // check if an empty tile is adjacent
     // up
-    if ((y < height - 1) && get_label(x, y+1) == empty_tile) {
-      swap(x, y, x, y+1);
+    if ((y < height - 1) && get_label(x, y + 1) == empty_tile) {
+      swap(x, y, x, y + 1);
     }
     // down
     else if ((y > 0) && get_label(x, y - 1) == empty_tile) {
-      swap(x, y, x, y-1 );
+      swap(x, y, x, y - 1);
     }
     // right
     else if ((x < width - 1) && get_label(x + 1, y) == empty_tile) {
-      swap(x, y, x+1, y);
+      swap(x, y, x + 1, y);
     }
     // left
     else if ((x > 0) && get_label(x - 1, y) == empty_tile) {
-      swap(x, y, x-1, y);
+      swap(x, y, x - 1, y);
+    } else {
+      --move_count;
     }
-    else {--move_count;}
-    
   }
 
   [[nodiscard]] bool solved() const
   {
-    if (get_label(width -1 , height -1) != empty_tile)
-      {return false;}
+    if (get_label(width - 1, height - 1) != empty_tile) { return false; }
     for (std::size_t x = 0; x < width; ++x) {
       for (std::size_t y = 0; y < height; ++y) {
-        auto tile_num = (x *width) + y + 1;
+        auto tile_num = (x * width) + y + 1;
         auto label = fmt::format("{:^4}", std::to_string(tile_num));
-        if ( x == (width -1) && y == (height -1)) {
-          if (get_label(x, y) != empty_tile) { return false;}
-        }else if (get_label(x, y) != label) { return false; }
+        if (x == (width - 1) && y == (height - 1)) {
+          if (get_label(x, y) != empty_tile) { return false; }
+        } else if (get_label(x, y) != label) {
+          return false;
+        }
       }
     }
 
@@ -107,7 +108,7 @@ void game_of_fifteen()
     std::vector<ftxui::Component> tiles;
     for (std::size_t x = 0; x < gb.width; ++x) {
       for (std::size_t y = 0; y < gb.height; ++y) {
-        tiles.push_back(ftxui::Button(&gb.get_string(x,y), [=, &gb] {
+        tiles.push_back(ftxui::Button(&gb.get_string(x, y), [=, &gb] {
           if (!gb.solved()) { gb.press(x, y); }
           update_quit_text(gb);
         }));
@@ -159,11 +160,9 @@ void game_of_fifteen()
   all_tiles.push_back(quit_button);
   auto container = ftxui::Container::Horizontal(all_tiles);
 
-    for (std::size_t x = 0; x < gb.width; ++x) {
-      for (std::size_t y = 0; y < gb.height; ++y) { 
-        std::cout << gb.strings.at(x).at(y);
-      }
-    }
+  for (std::size_t x = 0; x < gb.width; ++x) {
+    for (std::size_t y = 0; y < gb.height; ++y) { std::cout << gb.strings.at(x).at(y); }
+  }
 
   auto renderer = ftxui::Renderer(container, make_layout);
 
@@ -191,7 +190,7 @@ int main(int argc, const char **argv)
       fmt::format("{} {}",
         rsey_game_jam::cmake::project_name,
         rsey_game_jam::cmake::project_version));// version string, acquired
-                                            // from config.hpp via CMake
+                                                // from config.hpp via CMake
 
     game_of_fifteen();
   } catch (const std::exception &e) {
