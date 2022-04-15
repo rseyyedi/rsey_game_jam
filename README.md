@@ -3,6 +3,7 @@
 [![ci](https://github.com/rseyyedi/rsey_game_jam/actions/workflows/ci.yml/badge.svg)](https://github.com/rseyyedi/rsey_game_jam/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/rseyyedi/rsey_game_jam/branch/main/graph/badge.svg)](https://codecov.io/gh/rseyyedi/rsey_game_jam)
 [![CodeQL](https://github.com/rseyyedi/rsey_game_jam/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/rseyyedi/rsey_game_jam/actions/workflows/codeql-analysis.yml)
+[![auto-clang-format](https://github.com/rseyyedi/rsey_game_jam/actions/workflows/auto-clang-format.yml/badge.svg?branch=main&event=push)](https://github.com/rseyyedi/rsey_game_jam/actions/workflows/auto-clang-format.yml)
 
 LGTM Has to be set up manually after template is created:
 
