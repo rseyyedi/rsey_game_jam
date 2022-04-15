@@ -40,7 +40,8 @@ template<std::size_t Width, std::size_t Height> struct GameBoard
   //  visit([](const auto x, const auto y, auto &gameboard) { gameboard.set(x, y, true); });
   }
 
-  void swap(std::size_t x_old, std::size_t y_old, std::size_t x_new, std::size_t y_new) noexcept 
+  // NOLINTNEXTLINE(bugprone-exception-escape)
+  void swap(std::size_t x_old, std::size_t y_old, std::size_t x_new, std::size_t y_new) 
   {
     auto tmp_label = get_string(x_new, y_new);
     get_string(x_new, y_new) = get_string(x_old, y_old);
